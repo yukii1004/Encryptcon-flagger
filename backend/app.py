@@ -1,20 +1,33 @@
-import flask
-from flask import Flask, render_template, url_for, redirect, session, request
+from flask import Flask, render_template, jsonify
+import mysql.connector
 
-app = Flask(__name__, static_folder='static', template_folder='templates')
-app.secret_key ='secret_key'
+app = Flask(__name__)
 
-@app.route('/')
+# MySQL Configuration
+mysql_config = {
+    'host': 'localhost',
+    'user': 'root',
+    'password': 'root',
+    'database': 'encrypton'
+}
+
+# Establish MySQL connection
+conn = mysql.connector.connect(**mysql_config)
+cursor = conn.cursor(dictionary=True) 
+
+@app.route('/api/home',methods=['GET'])
 def index():
-    return render_template('index.html')
+    query = "SELECT * FROM account"
+    cursor.execute(query)
+    data = cursor.fetchall()
+    return jsonify({'index': data})
 
-@app.route('/login')
-def login():
-    return render_template('login.html')
-
-@app.route('/register')
-def register():
-    return render_template('register.html')
+@app.route('/api/users',methods=['GET'])
+def users():
+    query = "SELECT * FROM transactions"
+    cursor.execute(query)
+    data = cursor.fetchall()
+    return jsonify({'users': data})
 
 if __name__ == '__main__':
     app.run(debug=True)
