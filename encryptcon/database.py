@@ -549,11 +549,11 @@ def predict(data):
         print("\n\n\t\tNOT SUFFICIENT INFORMATION")
 
 
-# startup()
-# add_black_list("3405", "Joe", "city-34", "xyz@mail.com")
-# add_black_list("5640", "John", "city-17", "abc@mail.com")
-# add_whitelist("777", "Hospital")
-# add_whitelist("456", "Clinic")
+startup()
+add_black_list("3405", "Joe", "city-34", "xyz@mail.com")
+add_black_list("5640", "John", "city-17", "abc@mail.com")
+add_whitelist("777", "Hospital")
+add_whitelist("456", "Clinic")
 sample = {
     "transaction_id": "56",
     "customer_id": "1094",
