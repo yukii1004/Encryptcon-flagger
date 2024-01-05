@@ -2,6 +2,11 @@ import random
 import datetime
 import pandas as pd
 import mysql.connector
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
 
 # Replace these values with your MySQL server information
 host = "localhost"
@@ -11,7 +16,7 @@ database = "encryptcon"
 
 
 def startup():
-    df = pd.read_csv("encryptcon/synthetic_financial_data.csv")
+    df = pd.read_csv("synthetic_financial_data.csv")
 
     try:
         # Establish a connection to the MySQL server
@@ -363,7 +368,7 @@ def get_data_for_model(cust_id):
             # Use a random number between 10000 and 25000 as the additional value
             cursor.execute(get_data_query, (cust_id,))
             result = cursor.fetchall()
-            auth, old_bal = predict(result)
+            return result
 
     except mysql.connector.Error as e:
         print(f"Error connecting to MySQL: {e}")
@@ -371,25 +376,22 @@ def get_data_for_model(cust_id):
     finally:
         # Close the connection, whether successful or not
         if 'connection' in locals() and connection.is_connected():
-            if auth:
-                query = """UPDATE accounts SET balance = %s WHERE customer_id = %s"""
-                cursor.execute(query, (old_bal, cust_id))
-                connection.commit()
-
             connection.close()
 
 
 def predict(data):
 
-    authFactor = 1
+    authFactor = 0
 
-    if len(data.keys()) == 6:
+    if len(data):
+
+        balance = get_balance(data['customer_id'])
 
         if data['merchant_id'] in [x[0] for x in get_whitelist()]:
-            return 0
+            return balance, 0
 
         if data['merchant_id'] in [y[0] for y in get_blacklist()]:
-            return 1
+            return balance, 1
 
         # Location Condition
         past_n_transactions = get_data_for_model(data['customer_id'])
@@ -397,20 +399,172 @@ def predict(data):
         most_common_location = max(set(my_list), key=my_list.count)
 
         if data['location'] == most_common_location:
-            authFactor -= 0.3
+            authFactor += 0.3
 
         elif data['location'] in my_list:
-            authFactor -= 0.25
+            authFactor += 0.25
 
         else:
-            authFactor += 0.3
+            authFactor -= 0.3
+
+        balance = get_balance(data['customer_id'])
+
+        if float(balance)*0.95 < float(data['amount']):
+            authFactor += 0.2
+
+        # Model 1
+
+        df = pd.read_csv("synthetic_financial_data.csv")
+
+        df = df.drop(['transaction_id', 'transaction_time', 'card_type',
+                      'customer_age', 'transaction_description'], axis=1)
+        df = df.dropna()
+
+        label_encoder = LabelEncoder()
+
+        df['location'] = label_encoder.fit_transform(df['location'])
+        df['purchase_category'] = label_encoder.fit_transform(
+            df['purchase_category'])
+
+        # Display the encoded DataFrame
+
+        x = df.drop('is_fraudulent', axis=1)
+        y = df['is_fraudulent']
+
+        X_train, X_test, Y_train, Y_test = train_test_split(
+            x, y, test_size=0.33, random_state=333)
+
+        fraudulentclassifier1 = DecisionTreeClassifier(
+            max_leaf_nodes=1000, random_state=0)
+
+        fraudulentclassifier1.fit(X_train, Y_train)
+        Y_predicted = fraudulentclassifier1.predict(X_test)
+        # print("Accuracy Score Decision Tree : ", accuracy_score(Y_test, Y_predicted))
+
+        # Model 2
+
+        df = pd.read_csv("./synthetic_financial_data.csv")
+
+        df = df.drop(['transaction_id', 'transaction_time', 'card_type',
+                      'customer_age', 'transaction_description'], axis=1)
+        df = df.dropna()
+
+        label_encoder = LabelEncoder()
+
+        df['location'] = label_encoder.fit_transform(df['location'])
+        df['purchase_category'] = label_encoder.fit_transform(
+            df['purchase_category'])
+
+        # Display the encoded DataFrame
+
+        x = df.drop('is_fraudulent', axis=1)
+        y = df['is_fraudulent']
+
+        X_train, X_test, Y_train, Y_test = train_test_split(
+            x, y, test_size=0.33, random_state=333)
+
+        fraudulentclassifier2 = KNeighborsClassifier(n_neighbors=3)
+
+        fraudulentclassifier2.fit(X_train, Y_train)
+        Y_predicted = fraudulentclassifier2.predict(X_test)
+        # print("Accuracy Score KNN Classifier : ", accuracy_score(Y_test, Y_predicted))
+
+        # MOdel 3
+
+        df = pd.read_csv("./synthetic_financial_data.csv")
+
+        df = df.drop(['transaction_id', 'transaction_time', 'card_type',
+                      'customer_age', 'transaction_description'], axis=1)
+        df = df.dropna()
+
+        label_encoder = LabelEncoder()
+
+        df['location'] = label_encoder.fit_transform(df['location'])
+        df['purchase_category'] = label_encoder.fit_transform(
+            df['purchase_category'])
+
+        # Display the encoded DataFrame
+
+        x = df.drop('is_fraudulent', axis=1)
+        y = df['is_fraudulent']
+
+        # Split the data into training and testing sets
+        X_train, X_test, y_train, y_test = train_test_split(
+            x, y, test_size=0.2, random_state=42)
+
+        # Build a Random Forest Regression model
+        fraudulentclassifier3 = RandomForestRegressor(
+            n_estimators=100, random_state=42)
+
+        # Train the model
+        fraudulentclassifier3.fit(X_train, y_train)
+
+        # Make predictions on the testing data
+        y_pred = fraudulentclassifier3.predict(X_test)
+
+        def preprocess_data(data):
+            data = data.drop(['transaction_description', 'customer_age', 'transaction_id', 'transaction_time',
+                              'card_type', 'is_fraudulent'], axis=1)
+
+            label_encoder = LabelEncoder()
+            data['location'] = label_encoder.fit_transform(data['location'])
+            data['purchase_category'] = label_encoder.fit_transform(
+                data['purchase_category'])
+
+            return data
+
+        # Preprocess the input data
+        input_df = preprocess_data(pd.DataFrame(data, index=[0]))
+
+        # Make predictions using the Decision Tree model
+        Dec_Tree_prediction = fraudulentclassifier1.predict(input_df)
+        print(f"Decision Tree Prediction: {Dec_Tree_prediction[0]}")
+
+        # Make predictions using the K-Nearest Neighbors model
+        knn_classifier_prediction = fraudulentclassifier2.predict(input_df)
+        print(f"KNN Classifier Prediction: {knn_classifier_prediction[0]}")
+
+        # Make predictions using the Random Forest model
+        RF_prediction = fraudulentclassifier3.predict(input_df)
+        print(f"RF Classifier Prediction: {RF_prediction[0]}")
+
+        final_predictions = 0.6 * \
+            Dec_Tree_prediction[0] + 0.15 * \
+            knn_classifier_prediction[0] + 0.25*RF_prediction[0]
+        print("final prediction: ", final_predictions)
+
+        auth = (0.8 * final_predictions + authFactor*0.2)
+
+        if auth >= 0.85:
+            print("\n\n\t\tFLAG 3")
+        if auth >= 0.4 and auth < 0.85:
+            print("\n\n\t\tFLAG 2")
+
+        if auth >= 0.3 and auth < 0.4:
+            print("\n\n\t\tFLAG 1")
+        if auth < 0.3:
+            print("\n\n\t\tFLAG 0")
 
     else:
         print("\n\n\t\tNOT SUFFICIENT INFORMATION")
 
 
-startup()
-add_black_list("3405", "Joe", "city-34", "xyz@mail.com")
-add_black_list("5640", "John", "city-17", "abc@mail.com")
-add_whitelist("777", "Hospital")
-add_whitelist("456", "Clinic")
+# startup()
+# add_black_list("3405", "Joe", "city-34", "xyz@mail.com")
+# add_black_list("5640", "John", "city-17", "abc@mail.com")
+# add_whitelist("777", "Hospital")
+# add_whitelist("456", "Clinic")
+sample = {
+    "transaction_id": "56",
+    "customer_id": "1094",
+    "merchant_id": "2015",
+    "amount": "7964.55",
+    "transaction_time": "2023-01-01 00:00:55",
+    "is_fraudulent": "1",
+    "card_type": "Discover",
+    "location": "City-48",
+    "purchase_category": "Groceries",
+    "customer_age": "21",
+    "transaction_description": "Purchase at Merchant-2015"
+}
+predict(sample)
