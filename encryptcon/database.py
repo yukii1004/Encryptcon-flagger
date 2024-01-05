@@ -11,7 +11,7 @@ database = "encryptcon"
 
 
 def startup():
-    df = pd.read_csv("synthetic_financial_data.csv")
+    df = pd.read_csv("encryptcon/synthetic_financial_data.csv")
 
     try:
         # Establish a connection to the MySQL server
