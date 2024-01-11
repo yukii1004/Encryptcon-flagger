@@ -12,13 +12,13 @@
 - Implement real-time monitoring with sub-second latency, providing prompt insights into transaction patterns.
 - Utilize behavioral analytics to identify evolving patterns, contributing to  reduction in false positives.
 ### Methodology
-- ** Data Collection : ** Comprehensive dataset gathered for both normal and fraudulent transactions, ensuring real-world representation.
-- ** Data Preprocessing : ** Thorough cleaning and preprocessing, handling missing values, outliers, and prioritizing privacy.
-- ** Exploratory Data Analysis (EDA): ** EDA provided insights into feature distribution, relationships, and patterns.
-- ** Data Splitting: ** Dataset split into training and testing sets, reserving a portion for evaluating model performance on new data.
-- ** Model Selection: ** Consideration and experimentation with machine learning algorithms for anomaly detection.
-- ** Model Training: ** Selected model trained on the dataset, fine-tuning hyperparameters with cross-validation for robustness.
-- ** Model Evaluation:  ** Evaluation of model performance on the testing dataset, adjusting based on relevant metrics.
+- **Data Collection :** Comprehensive dataset gathered for both normal and fraudulent transactions, ensuring real-world representation.
+- **Data Preprocessing :** Thorough cleaning and preprocessing, handling missing values, outliers, and prioritizing privacy.
+- **Exploratory Data Analysis (EDA):** EDA provided insights into feature distribution, relationships, and patterns.
+- **Data Splitting:** Dataset split into training and testing sets, reserving a portion for evaluating model performance on new data.
+- **Model Selection:** Consideration and experimentation with machine learning algorithms for anomaly detection.
+- **Model Training:** Selected model trained on the dataset, fine-tuning hyperparameters with cross-validation for robustness.
+- **Model Evaluation:** Evaluation of model performance on the testing dataset, adjusting based on relevant metrics.
 ### Inferences
 - Unusual Transaction Amounts
 - Unusual Transaction Frequency
